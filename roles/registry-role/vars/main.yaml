@@ -1,0 +1,4 @@
+registry_name: my-registry
+registry_image: registry:2
+registry_port: 5000
+container_engine: docker 

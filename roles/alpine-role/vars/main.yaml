@@ -1,0 +1,7 @@
+---
+port_to_expose: 22
+container_name: alpine-container
+container_image: alpine:latest
+ssh_config_path: /etc/ssh/sshd_config
+container_engine: podman
+#puoi intercambiare il motore di podman o docker a seconda della build che intendi fare  

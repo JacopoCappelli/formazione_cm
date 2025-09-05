@@ -1,0 +1,29 @@
+---
+- name: Build and push Fedora and Alpine images to local Docker registry
+  hosts: localhost # Esegui questo playbook sulla macchina che ospita il registry
+  connection: local
+  vars:
+    registry_url: "localhost:5000" # Indirizzo del tuo registry
+    fedora_image_name: "fedora-ssh"
+    alpine_image_name: "alpine-ssh"
+
+  tasks:
+    - name: Build and push Fedora image
+      community.docker.docker_image:
+        build:
+          path: ../fedora-role/file/Dockerfile
+        name: "{{ registry_url }}/{{ fedora_image_name }}"
+        tag: "latest"
+        push: yes
+        source: build
+      when: ansible_facts['os_family'] == 'RedHat' # Esempio di condizione, opzionale
+
+    - name: Build and push Alpine image
+      community.docker.docker_image:
+        build:
+          path: /alpine-role/file/Dockerfile
+        name: "{{ registry_url }}/{{ alpine_image_name }}"
+        tag: "latest"
+        push: yes
+        source: build
+      when: ansible_facts['os_family'] == 'Alpine' # Esempio di condizione, opzionale

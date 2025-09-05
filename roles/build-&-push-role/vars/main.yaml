@@ -1,0 +1,3 @@
+registry_url: "localhost:5000" 
+fedora_image_name: "fedora-ssh"
+alpine_image_name: "alpine-ssh"

@@ -1,0 +1,104 @@
+- name: Avvia il container Fedora in background con Podman
+  containers.podman.podman_container:
+    name: "{{ container_2_name }}"
+    image: "{{ container_2_image }}"
+    expose:
+      - "2223:{{ port_to_expose }}"
+    state: started
+    recreate: true
+    command: ["sh", "-c", "while true; do sleep 1000; done"]
+
+- name: Aggiungi l'utente 'vagrant' al container Fedora
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: useradd -m vagrant
+    user: root
+
+- name: Crea la directory .ssh per vagrant
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: mkdir -p /home/vagrant/.ssh
+    user: vagrant
+
+- name: Crea il file authorized_keys vuoto
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: touch /home/vagrant/.ssh/authorized_keys
+    user: vagrant
+
+- name: Imposta permessi corretti su .ssh e authorized_keys
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: sh -c "chown -R vagrant:vagrant /home/vagrant/.ssh && chmod 700 /home/vagrant/.ssh && chmod 600 /home/vagrant/.ssh/authorized_keys"
+    user: root
+
+- name: Installa OpenSSH Server nel container Fedora
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: dnf install -y openssh-server
+    user: root
+
+- name: Genera le chiavi host SSH nel container Fedora
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: ssh-keygen -A
+    user: root
+
+- name: Configura sshd_config (disabilita root login, password auth, abilita pubkey)
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: >
+      sh -c "
+      sed -i 's|#PermitRootLogin prohibit-password|PermitRootLogin no|' /etc/ssh/sshd_config &&
+      sed -i 's|#PasswordAuthentication yes|PasswordAuthentication no|' /etc/ssh/sshd_config &&
+      sed -i 's|#PubkeyAuthentication yes|PubkeyAuthentication yes|' /etc/ssh/sshd_config &&
+      sed -i 's|#PermitEmptyPasswords no|PermitEmptyPasswords yes|' /etc/ssh/sshd_config &&
+      echo 'AllowUsers vagrant' >> /etc/ssh/sshd_config &&
+      echo 'AuthorizedKeysFile %h/.ssh/authorized_keys' >> /etc/ssh/sshd_config
+      "
+    user: root
+
+- name: Avvia o riavvia il servizio sshd nel container Fedora
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: /usr/sbin/sshd
+    user: root
+
+- name: Leggi la chiave pubblica SSH
+  ansible.builtin.slurp:
+    src: /home/vagrant/.ssh/id_rsa_vagrant.pub
+  register: ssh_key_data
+
+- name: Copia la chiave pubblica nel container
+  containers.podman.podman_container_copy_into:
+    container: "{{ container_2_name }}"
+    content: "{{ ssh_key_data.content | b64decode }}"
+    container_path: "/home/vagrant/.ssh/authorized_keys"
+    force: true
+    mode_parse: "octal_string_only"
+    mode: '0600'
+
+- name: Imposta i permessi sulla directory .ssh e authorized_keys (Fedora)
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: >
+      sh -c "chown -R vagrant:vagrant /home/vagrant/.ssh &&
+             chmod 700 /home/vagrant/.ssh &&
+             chmod 600 /home/vagrant/.ssh/authorized_keys"
+    user: root
+
+- name: Imposta una password temporanea per l'utente vagrant nel container Fedora
+  containers.podman.podman_container_exec:
+    container: "{{ container_2_name }}"
+    command: 
+      - sh
+      - -c
+      - "echo 'vagrant:changeme' | chpasswd"
+
+    user: root
+
+- name: Avvia (o riavvia) il servizio SSH nel container
+  containers.podman.podman_container_exec:
+    name: "{{ container_2_name }}"
+    command: /usr/sbin/sshd
+    user: root

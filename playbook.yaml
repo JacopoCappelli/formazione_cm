@@ -1,0 +1,13 @@
+---
+
+- name: Richiamo dei ruoli
+  hosts: localhost
+  become: true
+  gather_facts: no
+  roles:
+    - alpine-role
+    - fedora-role
+    - registry-role
+    - build-&-push-role
+
+ 

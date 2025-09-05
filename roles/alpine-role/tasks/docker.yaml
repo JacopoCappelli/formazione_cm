@@ -1,0 +1,108 @@
+- name: Avvia il container alpine in background
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    ports:
+      - "2222:{{ port_to_expose }}"
+    state: started
+    recreate: true
+    command: sh -c "while true; do sleep 1000; done"
+
+- name: Aggiungi l'utente 'vagrant' al container Alpine
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: adduser -D vagrant
+    user: root
+
+- name: Crea la directory .ssh
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: mkdir -p /home/vagrant/.ssh
+    user: vagrant
+
+- name: Crea il file authorized_keys
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: touch /home/vagrant/.ssh/authorized_keys
+    user: vagrant
+
+- name: Imposta i permessi corretti per la chiave pubblica
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: sh -c "chown -R vagrant:vagrant /home/vagrant/.ssh && chmod 700 /home/vagrant/.ssh && chmod 600 /home/vagrant/.ssh/authorized_keys"
+    user: root
+
+- name: Installa il servizio SSH e crea la directory sshd
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: sh -c "apk add --no-cache openssh && mkdir -p /etc/ssh"
+    user: root
+
+- name: Genera le chiavi host SSH nel container Alpine
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: ssh-keygen -A
+    user: root
+
+- name: Configura correttamente sshd_config (AuthorizedKeysFile, ecc.)
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: >
+      sh -c "
+      sed -i 's|^#*PermitRootLogin .*|PermitRootLogin no|' /etc/ssh/sshd_config &&
+      sed -i 's|^#*PasswordAuthentication .*|PasswordAuthentication no|' /etc/ssh/sshd_config &&
+      sed -i 's|^#*PubkeyAuthentication .*|PubkeyAuthentication yes|' /etc/ssh/sshd_config &&
+      sed -i 's|^#*AuthorizedKeysFile .*|AuthorizedKeysFile %h/.ssh/authorized_keys|' /etc/ssh/sshd_config &&
+      echo 'AllowUsers vagrant' >> /etc/ssh/sshd_config
+      "
+    user: root
+
+- name: Riavvia (o avvia) il servizio SSH nel container Alpine
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: sh -c "ps | grep '[s]shd' && kill $(pidof sshd) && /usr/sbin/sshd || /usr/sbin/sshd"
+    user: root
+
+- name: Leggi la chiave pubblica SSH
+  ansible.builtin.slurp:
+    src: /home/vagrant/.ssh/id_rsa_vagrant.pub
+  register: ssh_key_data
+
+- name: Copia la chiave pubblica nel container
+  community.docker.docker_container_copy_into:
+    container: "{{ container_name }}"
+    content: "{{ ssh_key_data.content | b64decode }}"
+    container_path: "/home/vagrant/.ssh/authorized_keys"
+    force: true
+    mode_parse: "octal_string_only"
+    mode: '0600'
+
+- name: Imposta i permessi corretti sulla .ssh directory e sulla authorized_keys
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: sh -c " chown -R vagrant:vagrant /home/vagrant/.ssh && chmod 700 /home/vagrant/.ssh && chmod 600 /home/vagrant/.ssh/authorized_keys "
+    user: root
+
+- name: Imposta una password temporanea per l'utente vagrant per favorire la connessione
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: sh -c "echo 'vagrant:changeme' | chpasswd"
+    user: root
+
+- name: Impostazione dei permessi corretti per ogni file e cartella 
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: vagrant
+    group: vagrant
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "/home/vagrant/.ssh", mode: "0700" }
+    - { path: "/home/vagrant/.ssh/id_rsa_vagrant", mode: "0600" }
+    - { path: "/home/vagrant/.ssh/id_rsa_vagrant.pub", mode: "0644" }
+    - { path: "/home/vagrant/.ssh/authorized_keys", mode: "0600" }
+
+- name: Avvia il servizio SSH
+  community.docker.docker_container_exec:
+    container: "{{ container_name }}"
+    command: /usr/sbin/sshd
+    user: root

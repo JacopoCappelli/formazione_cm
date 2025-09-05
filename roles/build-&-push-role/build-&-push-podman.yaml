@@ -1,0 +1,25 @@
+---
+- name: Build and push Fedora and Alpine images to local Podman registry
+  hosts: localhost # Esegui questo playbook sulla macchina che ospita il registry
+  connection: local
+
+  tasks:
+    - name: Build and push Fedora image
+      community.podman.podman_image:
+        build:
+          path: ../fedora-role/file/Dockerfile
+        name: "{{ registry_url }}/{{ fedora_image_name }}"
+        tag: "latest"
+        push: yes
+        source: build
+      when: ansible_facts['os_family'] == 'RedHat'
+
+    - name: Build and push Alpine image
+      community.podman.podman_image:
+        build:
+          path: ../alpine-role/file/Dockerfile
+        name: "{{ registry_url }}/{{ alpine_image_name }}"
+        tag: "latest"
+        push: yes
+        source: build
+      when: ansible_facts['os_family'] == 'Alpine'

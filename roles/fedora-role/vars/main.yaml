@@ -1,0 +1,6 @@
+---
+container_2_name: fedora-container
+container_2_image: fedora:latest
+port_to_expose: 22
+container_engine: docker 
+#puoi intercambiare il motore di podman o docker a seconda della build che preferisci  

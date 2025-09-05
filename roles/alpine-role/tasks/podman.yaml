@@ -1,0 +1,110 @@
+- name: Avvia il container Alpine in background (Podman)
+  containers.podman.podman_container:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    state: started
+    recreate: true
+    detach: true 
+    ports:
+      - "2222:{{ port_to_expose }}"
+    command: ["sh", "-c", "while true; do sleep 1000; done"]
+
+- name: Aggiungi l’utente 'vagrant' al container Alpine
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: adduser -D vagrant
+    user: root
+
+- name: Crea la directory .ssh
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: mkdir -p /home/vagrant/.ssh
+    user: vagrant
+
+- name: Crea il file authorized_keys
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: touch /home/vagrant/.ssh/authorized_keys
+    user: vagrant
+
+- name: Imposta i permessi per la chiave pubblica
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: >
+      sh -c "chown -R vagrant:vagrant /home/vagrant/.ssh &&
+             chmod 700 /home/vagrant/.ssh &&
+             chmod 600 /home/vagrant/.ssh/authorized_keys"
+    user: root
+
+- name: Installa il servizio SSH e crea la directory sshd
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: sh -c "dnf install -y openssh-server || apk add --no‑cache openssh; mkdir -p /etc/ssh"
+    user: root
+
+- name: Genera le chiavi host SSH nel container Alpine
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: ssh-keygen -A
+    user: root
+
+- name: Modifica sshd_config per maggiore sicurezza
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: |
+      sh -c "
+      sed -i 's|^#*PermitRootLogin .*|PermitRootLogin no|' /etc/ssh/sshd_config &&
+      sed -i 's|^#*PasswordAuthentication .*|PasswordAuthentication no|' /etc/ssh/sshd_config &&
+      sed -i 's|^#*PubkeyAuthentication .*|PubkeyAuthentication yes|' /etc/ssh/sshd_config &&
+      sed -i 's|^#*AuthorizedKeysFile .*|AuthorizedKeysFile %h/.ssh/authorized_keys|' /etc/ssh/sshd_config &&
+      echo 'AllowUsers vagrant' >> /etc/ssh/sshd_config
+      "
+    user: root
+
+- name: Riavvia il servizio SSH nel container
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command:
+      - sh
+      - -c
+      - "ps | grep '[s]shd' && kill $(pidof sshd) && /usr/sbin/sshd || /usr/sbin/sshd"
+    user: root
+
+- name: Leggi la chiave pubblica SSH (host)
+  ansible.builtin.slurp:
+    src: /home/vagrant/.ssh/id_rsa_vagrant.pub
+  register: ssh_key_data
+
+- name: Copia la chiave pubblica nel container
+  containers.podman.podman_container_copy:
+    container: "{{ container_name }}"
+    src: "{{ ssh_key_data.content | b64decode }}"
+    dest: "/home/vagrant/.ssh/authorized_keys"
+    archive: false
+    overwrite: true
+
+- name: Imposta i permessi corretti su file e directory in host (solo se necessario)
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: vagrant
+    group: vagrant
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "/home/vagrant/.ssh", mode: "0700" }
+    - { path: "/home/vagrant/.ssh/id_rsa_vagrant", mode: "0600" }
+    - { path: "/home/vagrant/.ssh/id_rsa_vagrant.pub", mode: "0644" }
+    - { path: "/home/vagrant/.ssh/authorized_keys", mode: "0600" }
+
+- name: Imposta una password temporanea per l'utente vagrant nel container 
+  containers.podman.podman_container_exec:
+    container: "{{ container_name }}"
+    command: 
+      - sh
+      - -c
+      - "echo 'vagrant:changeme' | chpasswd"
+
+- name: Avvia (o riavvia) il servizio SSH nel container
+  containers.podman.podman_container_exec:
+    name: "{{ container_name }}"
+    command: /usr/sbin/sshd
+    user: root
