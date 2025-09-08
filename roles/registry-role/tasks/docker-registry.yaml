@@ -1,3 +1,5 @@
+---
+
 - name: Avvia Docker Registry container
   community.docker.docker_container:
     name: "{{ registry_name }}"
@@ -6,3 +8,5 @@
     restart_policy: always
     ports:
       - "{{ registry_port }}:{{ registry_port }}"
+
+  

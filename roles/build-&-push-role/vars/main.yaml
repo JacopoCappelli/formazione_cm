@@ -1,3 +1,9 @@
 registry_url: "localhost:5000" 
 fedora_image_name: "fedora-ssh"
 alpine_image_name: "alpine-ssh"
+registry_name: my-registry
+registry_image: registry:2
+registry_port: 5000
+container_engine: docker 
+registry_auth_username: Useregistry
+registry_auth_password: registrypassword

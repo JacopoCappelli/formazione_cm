@@ -20,7 +20,8 @@ Vagrant.configure("2") do |config|
             sudo usermod -aG docker vagrant
             docker pull ealen/echo-server
             apt update && apt install -y podman
-            ssh-keygen -t rsa -b 4096 -f /home/vagrant/.ssh/id_rsa_vagrant
+            ssh-keygen -t rsa -b 4096 -f /home/vagrant/.ssh/id_rsa_vagrant 
+            sudo apt install apache2-utils
         SHELL
 
         debian.vm.provision "ansible" do |ansible|

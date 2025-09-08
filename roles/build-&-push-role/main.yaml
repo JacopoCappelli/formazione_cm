@@ -3,8 +3,18 @@
     msg: "Engine '{{ container_engine }}' non supportato. Usa 'docker' o 'podman'."
   when: container_engine not in ['docker', 'podman']
 
+- name: Carica variabili sensibili dal Vault
+  include_vars: vault.yaml
+
+- name: Cifra il file vault.yaml solo se non è già cifrato
+  ansible.builtin.shell: >
+    ansible-vault encrypt roles/build-&-push-role/vars/vault.yaml
+    --vault-password-file /home/vagrant/vault-password.txt
+  args:
+    creates: roles/build-&-push-role/vars/vault.yaml.vault
+
 - name: Importa i task per Docker
-  import_tasks: build-&-pushdocker.yaml
+  import_tasks: build-&-push-docker.yaml
   when: container_engine == 'docker'
 
 - name: Importa i task per Podman
