@@ -1,9 +1,0 @@
----
-- name: Creazione di un registry tramite podman
-  containers.podman.podman_container:
-    name: "{{ registry_name }}"
-    image: "{{ registry_image }}"
-    state: started
-    restart_policy: always
-    expose:
-      - "{{ registry_port }}:{{ registry_port }}"

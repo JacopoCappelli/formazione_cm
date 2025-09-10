@@ -1,0 +1,13 @@
+- name: Controlla che l'engine sia supportato
+  fail:
+    msg: "Engine '{{ container_engine }}' non supportato. Usa 'docker' o 'podman'."
+  when: container_engine not in ['docker', 'podman']
+
+
+- name: Importa i task per Docker
+  import_tasks: docker-jenkins.yaml
+  when: container_engine == 'docker'
+
+- name: Importa i task per Podman
+  import_tasks: podman-jenkins.yaml
+  when: container_engine == 'podman'

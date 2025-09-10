@@ -1,0 +1,12 @@
+---
+
+- name: scarica il container jenkins
+  community.docker.docker_container:
+    name: "{{container_name}}"
+    image: ”{{container_image}}"
+    state: started 
+    ports:
+      - "{{port_to_expose}}:{{port_to_expose}}"
+    volumes:
+      - jenkins-volume:/var/jenkins_home/volumes
+      

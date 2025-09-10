@@ -5,5 +5,5 @@ registry_name: my-registry
 registry_image: registry:2
 registry_port: 5000
 container_engine: docker 
-registry_auth_username: Useregistry
-registry_auth_password: registrypassword
+registry_username: Useregistry
+registry_password: registrypassword

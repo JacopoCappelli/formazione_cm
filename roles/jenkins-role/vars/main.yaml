@@ -1,0 +1,7 @@
+container_engine: docker 
+container_name: jenkins-container
+container_image: jenkins:latest
+port_to_expose: 8080
+
+
+#puoi cambiare il valore di 'container_engine' da docker a podman a seconda della build che vuoi fare  

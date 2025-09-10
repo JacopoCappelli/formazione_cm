@@ -3,11 +3,15 @@
     msg: "Engine '{{ container_engine }}' non supportato. Usa 'docker' o 'podman'."
   when: container_engine not in ['docker', 'podman']
 
+- name: Carica variabili sensibili dal Vault
+  include_vars:
+    file: roles/build-push-role/vars/vault.yaml
+
 - name: Importa i task per Docker
-  import_tasks: docker-registry.yaml
+  import_tasks: build-push-docker.yaml
   when: container_engine == 'docker'
 
 - name: Importa i task per Podman
-  import_tasks: podman-registry.yaml
+  import_tasks: build-push-podman.yaml
   when: container_engine == 'podman'
-#cambia il valore di "container_engine" nel file /vars/main.yaml
+

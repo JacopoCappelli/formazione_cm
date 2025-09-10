@@ -70,7 +70,7 @@
   register: ssh_key_data
 
 - name: Copia la chiave pubblica nel container
-  containers.podman.podman_container_copy_into:
+  containers.podman.podman_container_copy:
     container: "{{ container_2_name }}"
     content: "{{ ssh_key_data.content | b64decode }}"
     container_path: "/home/vagrant/.ssh/authorized_keys"

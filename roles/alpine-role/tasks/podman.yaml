@@ -39,7 +39,7 @@
 - name: Installa il servizio SSH e crea la directory sshd
   containers.podman.podman_container_exec:
     name: "{{ container_name }}"
-    command: sh -c "dnf install -y openssh-server || apk add --no‑cache openssh; mkdir -p /etc/ssh"
+    command: sh -c "apk update && apk add openssh && mkdir -p /etc/ssh"
     user: root
 
 - name: Genera le chiavi host SSH nel container Alpine
@@ -64,10 +64,7 @@
 - name: Riavvia il servizio SSH nel container
   containers.podman.podman_container_exec:
     name: "{{ container_name }}"
-    command:
-      - sh
-      - -c
-      - "ps | grep '[s]shd' && kill $(pidof sshd) && /usr/sbin/sshd || /usr/sbin/sshd"
+    command: sh -c "ps | grep '[s]shd' && kill $(pidof sshd) && /usr/sbin/sshd || /usr/sbin/sshd"
     user: root
 
 - name: Leggi la chiave pubblica SSH (host)
@@ -75,11 +72,16 @@
     src: /home/vagrant/.ssh/id_rsa_vagrant.pub
   register: ssh_key_data
 
+- name: Scrivi la chiave pubblica su un file temporaneo
+  ansible.builtin.copy:
+    dest: /tmp/id_rsa_vagrant.pub
+    content: "{{ ssh_key_data.content | b64decode }}"
+
 - name: Copia la chiave pubblica nel container
   containers.podman.podman_container_copy:
     container: "{{ container_name }}"
-    src: "{{ ssh_key_data.content | b64decode }}"
-    dest: "/home/vagrant/.ssh/authorized_keys"
+    src: /tmp/id_rsa_vagrant.pub
+    dest: /home/vagrant/.ssh/authorized_keys
     archive: false
     overwrite: true
 
@@ -97,11 +99,8 @@
 
 - name: Imposta una password temporanea per l'utente vagrant nel container 
   containers.podman.podman_container_exec:
-    container: "{{ container_name }}"
-    command: 
-      - sh
-      - -c
-      - "echo 'vagrant:changeme' | chpasswd"
+    name: "{{ container_name }}"
+    command: sh -c "echo 'vagrant:changeme' | chpasswd"
 
 - name: Avvia (o riavvia) il servizio SSH nel container
   containers.podman.podman_container_exec:

@@ -1,0 +1,76 @@
+
+- name: Scrive il file vault.yaml nella VM
+  ansible.builtin.copy:
+    src: ./roles/build-push-role/vars/vault.yaml
+    dest: /home/vagrant/vault/vault.yaml
+    owner: vagrant
+    group: vagrant
+    mode: '0600'
+
+- name: Scrive la password vault
+  ansible.builtin.copy:
+    src: ./roles/build-push-role/vars/password.txt
+    dest: /home/vagrant/vault/password.txt
+    owner: vagrant
+    group: vagrant
+    mode: '0600'
+
+- name: Cifra il file vault.yaml
+  ansible.builtin.shell: >
+    ansible-vault encrypt /home/vagrant/vault/vault.yaml
+    --vault-password-file /home/vagrant/vault/password.txt
+
+- name: Crea cartella per htpasswd
+  ansible.builtin.file:
+    path: /home/vagrant/registry-auth
+    state: directory
+    mode: '0755'
+
+- name: Crea utente per il registry (htpasswd)
+  community.general.htpasswd:
+    path: /home/vagrant/registry-auth/htpasswd
+    name: "{{ registry_username }}"
+    password: "{{ registry_password }}"
+    crypt_scheme: bcrypt
+    create: yes
+    mode: '0640'
+
+
+- name: Avvia Docker Registry container
+  community.docker.docker_container:
+    name: "{{ registry_name }}"
+    image: "{{ registry_image }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ registry_port }}:{{ registry_port }}"
+    volumes:
+      - /home/vagrant/registry-auth:/auth
+    env:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+
+- name: Login al registry (ora protetto)
+  community.docker.docker_login:
+    registry_url: "{{ registry_url }}"
+    username: "{{ registry_username }}"
+    password: "{{ registry_password }}"
+
+- name: Build and push Fedora image
+  community.docker.docker_image:
+    build:
+      path: /home/vagrant/roles/fedora-role/file
+    name: "{{ registry_url }}/{{ fedora_image_name }}"
+    tag: latest
+    push: true
+    source: build
+    
+- name: Build and push Alpine image
+  community.docker.docker_image:
+    build:
+      path: /home/vagrant/roles/alpine-role/file
+    name: "{{ registry_url }}/{{ alpine_image_name }}"
+    tag: latest
+    push: true
+    source: build
