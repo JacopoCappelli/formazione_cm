@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+
+    environment {
+        def IMAGE_NAME = "alpine-withdocker"
+        def TAG = "v1.0.${env.BUILD_NUMBER}"
+        def REGISTRY_NAME = "localhost:5000"
+    }
+
+    stages {
+        stage('Build Image') {
+            steps {
+                script {
+                    sh "docker build -t ${REGISTRY_NAME}/${IMAGE_NAME}:${TAG} -f ~/roles/jenkins-role/files/Dockerfile.master ."
+                }
+            }
+        }
+        
+        stage('Push Image') {
+            steps {
+                script {
+                    sh "docker push ${REGISTRY_NAME}/${IMAGE_NAME}:${TAG}"
+                }
+            }
+        }
+    }
+}

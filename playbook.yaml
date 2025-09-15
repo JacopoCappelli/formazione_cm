@@ -2,11 +2,15 @@
 
 - name: Richiamo dei ruoli
   hosts: all
+
   become: true
   gather_facts: no
+
+  
   roles:
     - alpine-role
     - fedora-role
     - build-push-role
+    - jenkins-role
 
  

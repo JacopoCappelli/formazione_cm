@@ -1,7 +1,7 @@
 Vagrant.configure("2") do |config| 
     config.vm.define "debian" do |debian|
     config.vm.synced_folder "./roles", "/home/vagrant/roles"
-
+    config.vm.network "forwarded_port", host: 8080, guest: 8080
         debian.vm.box = "debian/bookworm64" 
         debian.vm.provider "virtualbox" do |virtual| 
             virtual.gui = false

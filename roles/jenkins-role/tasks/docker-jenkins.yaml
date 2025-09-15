@@ -1,12 +1,15 @@
----
-
-- name: scarica il container jenkins
+- name: Avvia il container Jenkins con accesso a Docker
   community.docker.docker_container:
-    name: "{{container_name}}"
-    image: ”{{container_image}}"
-    state: started 
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    state: started
+    restart_policy: unless-stopped
+    pull: true
     ports:
-      - "{{port_to_expose}}:{{port_to_expose}}"
+      - "{{ port_to_expose }}:{{ port_to_expose }}"
+      - "{{ agent_port }}:{{ agent_port }}"
     volumes:
-      - jenkins-volume:/var/jenkins_home/volumes
-      
+      - "/var/run/docker.sock:/var/run/docker.sock"  
+      - "/usr/bin/docker:/usr/bin/docker"
+      - "jenkins_home:/var/jenkins_home"
+    user: root 
