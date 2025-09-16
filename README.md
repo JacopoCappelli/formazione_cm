@@ -36,12 +36,11 @@ Gestione sicura delle password tramite Ansible Vault
 Utilizzo
 
 # Prerequisiti
+- Vagrant  
+- Ansible  
+- VirtualBox o altro provider supportato da Vagrant  
+- Ansible Vault (per la gestione delle password cifrate)<br><br>
 
-Vagrant
-Ansible
-VirtualBox o altro provider supportato da Vagrant
-Ansible Vault (per la gestione delle password cifrate)
-Configurazione
 
 # Clonare il repository
 Configurare la variabile container_engine nei file delle variabili dei ruoli
