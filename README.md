@@ -1,13 +1,13 @@
-Struttura del Progetto Ansible per Gestione Container
+# Struttura del Progetto Ansible per Gestione Container
 
-Panoramica
+# Panoramica
 
 Questo progetto utilizza Ansible e Vagrant per automatizzare la creazione, gestione e distribuzione di container Docker/Podman. Il sistema supporta sia Docker che Podman come motori container, selezionabili tramite una variabile configurabile. Il file 'main.yaml' funge da punto di accesso per i file inerenti alle configurazioni di Docker o Podman.
 
 
 
 
-Ruoli e Funzionalità
+# Ruoli e Funzionalità
 
 Variabile di Configurazione Principale
 
@@ -35,7 +35,7 @@ Autenticazione al registry
 Gestione sicura delle password tramite Ansible Vault
 Utilizzo
 
-Prerequisiti
+# Prerequisiti
 
 Vagrant
 Ansible
@@ -43,7 +43,7 @@ VirtualBox o altro provider supportato da Vagrant
 Ansible Vault (per la gestione delle password cifrate)
 Configurazione
 
-Clonare il repository
+# Clonare il repository
 Configurare la variabile container_engine nei file delle variabili dei ruoli
 Cifrare le password con Ansible Vault:
 bash
