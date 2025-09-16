@@ -21,13 +21,6 @@ Il file `main.yaml` di ciascun ruolo funge da punto di accesso per le configuraz
 - Utente **`vagrant`** con accesso alle chiavi SSH private e pubbliche
 - Utilizzano **Dockerfile personalizzati** per ciascuna distribuzione
 
-### ⚙️ `jenkins-role`
-
-- Crea un'immagine Jenkins basata su **Alpine Linux**
-- Include accesso a **Docker** e **Podman**
-- Contiene un **JenkinsFile** per automatizzare il build delle immagini
-- Supporta esecuzioni di **build containerizzate**
-
 ### 📤 `build-push-role`
 
 - Gestisce un **registry container locale**
@@ -35,6 +28,15 @@ Il file `main.yaml` di ciascun ruolo funge da punto di accesso per le configuraz
 - Gestisce l'autenticazione al registry
 - Le password sono cifrate e gestite con **Ansible Vault**
 
+### ⚙️ `jenkins-role`
+
+- Tenta l'accesso al **registry** precedentemente creato
+- Crea un'immagine Jenkins basata su **Alpine Linux**
+- Include accesso a **Docker** e **Podman**
+- Contiene un **JenkinsFile** per automatizzare il build delle immagini con tag **progressive**
+- Supporta esecuzioni di **build containerizzate**
+- Insserisce le immagini all'interno del registry
+  
 ---
 
 ## 🧰 Utilizzo
