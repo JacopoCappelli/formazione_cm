@@ -2,7 +2,7 @@
 
 # Panoramica
 
-Questo progetto utilizza Ansible e Vagrant per automatizzare la creazione, gestione e distribuzione di container Docker/Podman. Il sistema supporta sia Docker che Podman come motori container, selezionabili tramite una variabile configurabile. Il file 'main.yaml' funge da punto di accesso per i file inerenti alle configurazioni di Docker o Podman.
+Questo progetto utilizza Ansible e Vagrant per automatizzare la creazione, gestione e distribuzione di container Docker/Podman. Il sistema supporta sia Docker che Podman come motori container, selezionabili tramite una variabile configurabile. Il file 'main.yaml' di ciascun ruolo funge da punto di accesso per i file inerenti alle configurazioni di Docker o Podman.
 
 
 
