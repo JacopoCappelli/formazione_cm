@@ -43,10 +43,14 @@ Utilizzo
 
 
 # Clonare il repository
-Configurare la variabile container_engine nei file delle variabili dei ruoli
-Cifrare le password con Ansible Vault:
-bash
-ansible-vault encrypt roles/build-push-role/vars/vault.yaml
+Configurare la variabile container_engine nei file delle variabili dei ruoli  
+
+Cifrare le password con Ansible Vault:  
+
+bash  
+
+ansible-vault encrypt roles/build-push-role/vars/vault.yaml<br><br>
+
 Esecuzione
 
 bash
